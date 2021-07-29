@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"mayday/log"
+	"github.com/byuoitav/mayday/log"
 
 	"github.com/spf13/pflag"
 )

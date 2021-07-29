@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mayday/log"
 	"net/http"
+
+	"github.com/byuoitav/mayday/log"
 
 	"github.com/slack-go/slack"
 )
@@ -18,7 +19,7 @@ type AlertManager struct {
 
 func (am *AlertManager) getIssueCount() (int, error) {
 	url := "https://smee.av.byu.edu/issues"
-	log.P.Info(fmt.Sprintf("sending request to: %s", url))
+	log.P.Debug(fmt.Sprintf("sending request to: %s", url))
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -37,7 +38,7 @@ func (am *AlertManager) getIssueCount() (int, error) {
 		return -1, err
 	}
 
-	log.P.Info(fmt.Sprintf("received %d issues", len(issues)))
+	log.P.Debug(fmt.Sprintf("received %d issues", len(issues)))
 	return len(issues), nil
 }
 

@@ -1,4 +1,4 @@
-module mayday
+module github.com/byuoitav/mayday
 
 go 1.16
 
