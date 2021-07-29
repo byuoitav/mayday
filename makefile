@@ -1,10 +1,6 @@
 NAME := mayday
 OWNER := byuoitav
 PKG := github.com/${OWNER}/${NAME}
-BUILD_PKG1 := ${PKG}/cmd/central
-BUILD_PKG2 := ${PKG}/cmd/local
-NAME_PKG1 := ${NAME}-central
-NAME_PKG2 := ${NAME}-local
 DOCKER_URL := docker.pkg.github.com
 DOCKER_PKG := ${DOCKER_URL}/${OWNER}/${NAME}
 
@@ -44,67 +40,49 @@ build: deps
 	@mkdir -p dist
 
 	@echo
-	@echo Building central backend for linux-amd64...
-	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o ./dist/${NAME_PKG1}-linux-amd64 ${BUILD_PKG1}
+	@echo Building for linux-amd64...
+	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o ./dist/${NAME}-linux-amd64 ${PKG}
 
 	@echo
-	@echo Building local backend for linux-amd64...
-	@env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o ./dist/${NAME_PKG2}-linux-amd64 ${BUILD_PKG2}
-	@echo
-	@echo Building local backend for linux-arm...
-	@env CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -v -o ./dist/${NAME_PKG2}-linux-arm ${BUILD_PKG2}
+	@echo Building for linux-arm...
+	@env CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -v -o ./dist/${NAME}-linux-arm ${PKG}
 
 	@echo
 	@echo Build output is located in ./dist/.
 
 docker: clean build
 ifeq (${COMMIT_HASH}, ${TAG})
-	@echo Building central dev container with tag ${COMMIT_HASH}
+	@echo Building amd64 dev container with tag ${COMMIT_HASH}
 
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG1}-dev:${COMMIT_HASH}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG1}-linux-amd64 -t ${DOCKER_PKG}/${NAME_PKG1}-dev:${COMMIT_HASH} dist
+	@echo Building container ${DOCKER_PKG}/${NAME}-dev:${COMMIT_HASH}
+	@docker build -f dockerfile --build-arg NAME=${NAME}-linux-amd64 -t ${DOCKER_PKG}/${NAME}-dev:${COMMIT_HASH} dist
 
-	@echo Building local arm64 dev container with tag ${COMMIT_HASH}
+	@echo Building arm dev container with tag ${COMMIT_HASH}
 
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG2}-amd64-dev:${COMMIT_HASH}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG2}-linux-amd64 -t ${DOCKER_PKG}/${NAME_PKG2}-amd64-dev:${COMMIT_HASH} dist
-
-	@echo Building local arm dev container with tag ${COMMIT_HASH}
-
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG2}-arm-dev:${COMMIT_HASH}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG2}-linux-arm -t ${DOCKER_PKG}/${NAME_PKG2}-arm-dev:${COMMIT_HASH} dist
+	@echo Building container ${DOCKER_PKG}/${NAME}-arm-dev:${COMMIT_HASH}
+	@docker build -f dockerfile --build-arg NAME=${NAME}-linux-arm -t ${DOCKER_PKG}/${NAME}-arm-dev:${COMMIT_HASH} dist
 
 else ifneq ($(shell echo ${TAG} | grep -x -E ${DEV_TAG_REGEX}),)
-	@echo Building dev central container with tag ${TAG}
+	@echo Building amd64 dev container with tag ${TAG}
 
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG1}-dev:${TAG}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG1}-linux-amd64 -t ${DOCKER_PKG}/${NAME_PKG1}-dev:${TAG} dist
+	@echo Building container ${DOCKER_PKG}/${NAME}-dev:${TAG}
+	@docker build -f dockerfile --build-arg NAME=${NAME}-linux-amd64 -t ${DOCKER_PKG}/${NAME}-dev:${TAG} dist
 
-	@echo Building dev local amd64 container with tag ${TAG}
+	@echo Building arm dev container with tag ${TAG}
 
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG2}-amd64-dev:${TAG}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG2}-linux-amd64 -t ${DOCKER_PKG}/${NAME_PKG2}-amd64-dev:${TAG} dist
-
-	@echo Building dev local arm container with tag ${TAG}
-
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG2}-arm-dev:${TAG}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG2}-linux-arm -t ${DOCKER_PKG}/${NAME_PKG2}-arm-dev:${TAG} dist
+	@echo Building container ${DOCKER_PKG}/${NAME}-arm-dev:${TAG}
+	@docker build -f dockerfile --build-arg NAME=${NAME}-linux-arm -t ${DOCKER_PKG}/${NAME}-arm-dev:${TAG} dist
 
 else ifneq ($(shell echo ${TAG} | grep -x -E ${PRD_TAG_REGEX}),)
-	@echo Building prd central container with tag ${TAG}
+	@echo Building amd64 prd container with tag ${TAG}
 
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG1}:${TAG}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG1}-linux-amd64 -t ${DOCKER_PKG}/${NAME_PKG1}:${TAG} dist
+	@echo Building container ${DOCKER_PKG}/${NAME}:${TAG}
+	@docker build -f dockerfile --build-arg NAME=${NAME}-linux-amd64 -t ${DOCKER_PKG}/${NAME}:${TAG} dist
 
-	@echo Building prd local amd64 container with tag ${TAG}
+	@echo Building arm prd container with tag ${TAG}
 
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG2}-amd64:${TAG}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG2}-linux-amd64 -t ${DOCKER_PKG}/${NAME_PKG2}-amd64:${TAG} dist
-
-	@echo Building prd local arm container with tag ${TAG}
-
-	@echo Building container ${DOCKER_PKG}/${NAME_PKG2}-arm:${TAG}
-	@docker build -f dockerfile --build-arg NAME=${NAME_PKG2}-linux-arm -t ${DOCKER_PKG}/${NAME_PKG2}-arm:${TAG} dist
+	@echo Building container ${DOCKER_PKG}/${NAME}-arm:${TAG}
+	@docker build -f dockerfile --build-arg NAME=${NAME}-linux-arm -t ${DOCKER_PKG}/${NAME}-arm:${TAG} dist
 
 endif
 
@@ -113,52 +91,37 @@ deploy: docker
 	@docker login ${DOCKER_URL} -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
 
 ifeq (${COMMIT_HASH}, ${TAG})
-	@echo Pushing dev central container with tag ${COMMIT_HASH}
+	@echo Pushing amd64 dev container with tag ${COMMIT_HASH}
 
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG1}-dev:${COMMIT_HASH}
-	@docker push ${DOCKER_PKG}/${NAME_PKG1}-dev:${COMMIT_HASH}
+	@echo Pushing container ${DOCKER_PKG}/${NAME}-dev:${COMMIT_HASH}
+	@docker push ${DOCKER_PKG}/${NAME}-dev:${COMMIT_HASH}
 
-	@echo Pushing dev local amd64 container with tag ${COMMIT_HASH}
+	@echo Pushing arm dev container with tag ${COMMIT_HASH}
 
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG2}-amd64-dev:${COMMIT_HASH}
-	@docker push ${DOCKER_PKG}/${NAME_PKG2}-amd64-dev:${COMMIT_HASH}
-
-	@echo Pushing dev local arm container with tag ${COMMIT_HASH}
-
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG2}-arm-dev:${COMMIT_HASH}
-	@docker push ${DOCKER_PKG}/${NAME_PKG2}-arm-dev:${COMMIT_HASH}
+	@echo Pushing container ${DOCKER_PKG}/${NAME}-arm-dev:${COMMIT_HASH}
+	@docker push ${DOCKER_PKG}/${NAME}-arm-dev:${COMMIT_HASH}
 
 else ifneq ($(shell echo ${TAG} | grep -x -E ${DEV_TAG_REGEX}),)
-	@echo Pushing dev central container with tag ${TAG}
+	@echo Pushing amd64 dev container with tag ${TAG}
 
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG1}-dev:${TAG}
-	@docker push ${DOCKER_PKG}/${NAME_PKG1}-dev:${TAG}
+	@echo Pushing container ${DOCKER_PKG}/${NAME}-dev:${TAG}
+	@docker push ${DOCKER_PKG}/${NAME}-dev:${TAG}
 
-	@echo Pushing dev local amd64 container with tag ${TAG}
+	@echo Pushing arm dev container with tag ${TAG}
 
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG2}-amd64-dev:${TAG}
-	@docker push ${DOCKER_PKG}/${NAME_PKG2}-amd64-dev:${TAG}
-
-	@echo Pushing dev local arm container with tag ${TAG}
-
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG2}-arm-dev:${TAG}
-	@docker push ${DOCKER_PKG}/${NAME_PKG2}-arm-dev:${TAG}
+	@echo Pushing container ${DOCKER_PKG}/${NAME}-arm-dev:${TAG}
+	@docker push ${DOCKER_PKG}/${NAME}-arm-dev:${TAG}
 
 else ifneq ($(shell echo ${TAG} | grep -x -E ${PRD_TAG_REGEX}),)
-	@echo Pushing prd central container with tag ${TAG}
+	@echo Pushing amd64 prd container with tag ${TAG}
 
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG1}:${TAG}
-	@docker push ${DOCKER_PKG}/${NAME_PKG1}:${TAG}
+	@echo Pushing container ${DOCKER_PKG}/${NAME}:${TAG}
+	@docker push ${DOCKER_PKG}/${NAME}:${TAG}
 
-	@echo Pushing prd local amd64 container with tag ${TAG}
+	@echo Pushing arm prd container with tag ${TAG}
 
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG2}-amd64:${TAG}
-	@docker push ${DOCKER_PKG}/${NAME_PKG2}-amd64:${TAG}
-
-	@echo Pushing prd local arm container with tag ${TAG}
-
-	@echo Pushing container ${DOCKER_PKG}/${NAME_PKG2}-arm:${TAG}
-	@docker push ${DOCKER_PKG}/${NAME_PKG2}-arm:${TAG}
+	@echo Pushing container ${DOCKER_PKG}/${NAME}-arm:${TAG}
+	@docker push ${DOCKER_PKG}/${NAME}-arm:${TAG}
 
 endif
 
